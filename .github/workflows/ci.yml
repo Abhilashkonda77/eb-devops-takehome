@@ -1,0 +1,44 @@
+# Secondary CI. The primary pipeline is the root Jenkinsfile.
+# Kept only because the assignment's optional bonus names
+# "GitHub Actions or .gitlab-ci.yml" literally; it runs the same core checks.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test-build-scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Lint and render chart
+        run: |
+          helm lint ./chart
+          helm template demo ./chart --set replicaCount=3 \
+            --set config.appName=ci-check | grep -q 'replicas: 3'
+
+      - name: Unit tests
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -r service/requirements-dev.txt
+          cd service && ../.venv/bin/pytest -q
+
+      - name: Build image
+        run: docker build -t demo-service:${{ github.sha }} service/
+
+      - name: Trivy scan (fail on HIGH/CRITICAL)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.56.2 image --no-progress --ignore-unfixed \
+            --severity HIGH,CRITICAL --exit-code 1 \
+            demo-service:${{ github.sha }}
