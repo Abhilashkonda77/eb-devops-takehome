@@ -167119,4 +167119,132 @@ home has a .git — see note below
 [32mA[m  service/requirements.txt
 [32mA[m  service/tests/test_app.py
 [32mA[m  setup.sh
-]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/
+]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mgit check-ignore -v REVIEW-NOTES-do-not-commit.md LAB-HINTS-do-not-commit.md 2>/dev/null[27m
+[7mls *-do-not-commit.md 2>/dev/null   # are they even in this dir? if not, nothing to leak[27m[Agit check-ignore -v REVIEW-NOTES-do-not-commit.md LAB-HINTS-do-not-commit.md 2>/dev/null
+ls *-do-not-commit.md 2>/dev/null   # are they even in this dir? if not, nothing to leak
+[?2004l]133;C\]666;vte.shell.preexec!\.gitignore:2:REVIEW-NOTES-do-not-commit.md	REVIEW-NOTES-do-not-commit.md
+.gitignore:3:LAB-HINTS-do-not-commit.md	LAB-HINTS-do-not-commit.md
+]133;C\]666;vte.shell.preexec!\]666;vte.shell.postexec=2\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mgit reset                     # unstage the big add; re-add piece by piece[27m
+[7mgit add .gitignore lab/ && git commit -m "Part 4: lab with fixed chart and findings"[27m
+[7mgit add service/ && git commit -m "Part 1: service, tests, Dockerfile"[27m
+[7mgit add chart/ && git commit -m "Part 2: Helm chart"[27m
+[7mgit add setup.sh && git commit -m "Part 3: idempotent kind setup"[27m
+[7mgit add Jenkinsfile .github/ && git commit -m "CI: Jenkins primary, GitHub Actions secondary"[27m
+[7mgit add README.md ANSWERS.md && git commit -m "Docs: README and Gateway API answer"[27m
+[7mgit log --oneline[27m[A[A[A[A[A[A[A]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ git reset                     # unstage the big add; re-add piece by piece
+git add .gitignore lab/ && git commit -m "Part 4: lab with fixed chart and findings"
+git add service/ && git commit -m "Part 1: service, tests, Dockerfile"
+git add chart/ && git commit -m "Part 2: Helm chart"
+git add setup.sh && git commit -m "Part 3: idempotent kind setup"
+git add Jenkinsfile .github/ && git commit -m "CI: Jenkins primary, GitHub Actions secondary"
+git add README.md ANSWERS.md && git commit -m "Docs: README and Gateway API answer"
+git log --oneline
+[?2004l]133;C\]666;vte.shell.preexec!\]133;C\]666;vte.shell.preexec!\[main (root-commit) 9c0fa3d] Part 4: lab with fixed chart and findings
+ 18 files changed, 167926 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 lab/FINDINGS.md
+ create mode 100644 lab/broken-chart/Chart.yaml
+ create mode 100644 lab/broken-chart/templates/NOTES.txt
+ create mode 100644 lab/broken-chart/templates/_helpers.tpl
+ create mode 100644 lab/broken-chart/templates/backend.yaml
+ create mode 100644 lab/broken-chart/templates/gateway.yaml
+ create mode 100644 lab/broken-chart/templates/metrics.yaml
+ create mode 100644 lab/broken-chart/templates/migrate-job.yaml
+ create mode 100644 lab/broken-chart/templates/rbac.yaml
+ create mode 100644 lab/broken-chart/templates/reporter.yaml
+ create mode 100644 lab/broken-chart/templates/worker.yaml
+ create mode 100644 lab/broken-chart/values.yaml
+ create mode 100644 lab/cluster-state/limits.yaml
+ create mode 100644 lab/cluster-state/namespace.yaml
+ create mode 100644 lab/go.mod
+ create mode 100644 lab/part4-session.log
+ create mode 100644 lab/scenario.sh
+]133;C\]666;vte.shell.preexec!\[main 623fcca] Part 1: service, tests, Dockerfile
+ 6 files changed, 147 insertions(+)
+ create mode 100644 service/.dockerignore
+ create mode 100644 service/Dockerfile
+ create mode 100644 service/app.py
+ create mode 100644 service/requirements-dev.txt
+ create mode 100644 service/requirements.txt
+ create mode 100644 service/tests/test_app.py
+]133;C\]666;vte.shell.preexec!\[main 632d3c3] Part 2: Helm chart
+ 9 files changed, 205 insertions(+)
+ create mode 100644 chart/.helmignore
+ create mode 100644 chart/Chart.yaml
+ create mode 100644 chart/templates/NOTES.txt
+ create mode 100644 chart/templates/_helpers.tpl
+ create mode 100644 chart/templates/configmap.yaml
+ create mode 100644 chart/templates/deployment.yaml
+ create mode 100644 chart/templates/ingress.yaml
+ create mode 100644 chart/templates/service.yaml
+ create mode 100644 chart/values.yaml
+]133;C\]666;vte.shell.preexec!\[main 5814e08] Part 3: idempotent kind setup
+ 1 file changed, 107 insertions(+)
+ create mode 100755 setup.sh
+]133;C\]666;vte.shell.preexec!\[main 03bcfd8] CI: Jenkins primary, GitHub Actions secondary
+ 2 files changed, 244 insertions(+)
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 Jenkinsfile
+]133;C\]666;vte.shell.preexec!\[main 90009c6] Docs: README and Gateway API answer
+ 2 files changed, 182 insertions(+)
+ create mode 100644 ANSWERS.md
+ create mode 100644 README.md
+]133;C\]666;vte.shell.preexec!\[?1h=[33m90009c6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Docs: README and Gateway API answer[m
+[33m03bcfd8[m CI: Jenkins primary, GitHub Actions secondary[m
+[33m5814e08[m Part 3: idempotent kind setup[m
+[33m632d3c3[m Part 2: Helm chart[m
+[33m623fcca[m Part 1: service, tests, Dockerfile[m
+[33m9c0fa3d[m Part 4: lab with fixed chart and findings[m
+[K[?1l>]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mgit ls-files | grep -iE 'ssh|aws|credential|\.env$|do-not-commit|\.kube|gnupg|history' && echo "LEAK[27m[7m [27m[7m- do not push" || echo "clean"[27m[A]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ git ls-files | grep -iE 'ssh|aws|credential|\.env$|do-not-commit|\.kube|gnupg|history' && echo "LEAK - do not push" || echo "clean"
+[?2004l]133;C\]666;vte.shell.preexec!\clean
+]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ clear
+[?2004l]133;C\]666;vte.shell.preexec!\[H[2J[3J]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mcd ~/Downloads/eb-devops-takehome-main[27m
+[7mwc -l lab/part4-session.log[27m
+[7mgrep -inE 'eyJ|BEGIN .*PRIVATE|password|secret|AKIA|token.*[A-Za-z0-9]{20}' lab/part4-session.log | head[27m[A[Acd ~/Downloads/eb-devops-takehome-main
+wc -l lab/part4-session.log
+grep -inE 'eyJ|BEGIN .*PRIVATE|password|secret|AKIA|token.*[A-Za-z0-9]{20}' lab/part4-session.log | head
+[?2004l]133;C\]666;vte.shell.preexec!\]133;C\]666;vte.shell.preexec!\167173 lab/part4-session.log
+]133;C\]666;vte.shell.preexec!\100:ingress-nginx        39m         Warning   FailedMount               pod/ingress-nginx-controller-5587cd7cf6-5nhwk    MountVolume.SetUp failed for volume "webhook-cert" : secret "ingress-nginx-admission" not found
+201:[?2004l]133;C\]666;vte.shell.preexec!\Password: 
+273:[7mkubectl get configmaps,secrets,serviceaccounts,limitranges -n debug-lab[27m[A[Akubectl describe pod -n debug-lab
+275:kubectl get configmaps,secrets,serviceaccounts,limitranges -n debug-lab
+316:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-tml2v (ro)
+386:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jzmrb (ro)
+455:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ddx7h (ro)
+525:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4vgzq (ro)
+594:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-62dmz (ro)
+666:secret/sh.helm.release.v1.debug-lab.v1   helm.sh/release.v1   1      2m6s
+]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mcd ~/Downloads/eb-devops-takehome-main[27m
+[7mwc -l lab/part4-session.log[27m
+[7mgrep -inE 'eyJ|BEGIN .*PRIVATE|password|secret|AKIA|token.*[A-Za-z0-9]{20}' lab/part4-session.log | head[27m[A[Acd ~/Downloads/eb-devops-takehome-main
+wc -l lab/part4-session.log
+grep -inE 'eyJ|BEGIN .*PRIVATE|password|secret|AKIA|token.*[A-Za-z0-9]{20}' lab/part4-session.log | head
+[?2004l]133;C\]666;vte.shell.preexec!\]133;C\]666;vte.shell.preexec!\167211 lab/part4-session.log
+]133;C\]666;vte.shell.preexec!\100:ingress-nginx        39m         Warning   FailedMount               pod/ingress-nginx-controller-5587cd7cf6-5nhwk    MountVolume.SetUp failed for volume "webhook-cert" : secret "ingress-nginx-admission" not found
+201:[?2004l]133;C\]666;vte.shell.preexec!\Password: 
+273:[7mkubectl get configmaps,secrets,serviceaccounts,limitranges -n debug-lab[27m[A[Akubectl describe pod -n debug-lab
+275:kubectl get configmaps,secrets,serviceaccounts,limitranges -n debug-lab
+316:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-tml2v (ro)
+386:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jzmrb (ro)
+455:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ddx7h (ro)
+525:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-4vgzq (ro)
+594:      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-62dmz (ro)
+666:secret/sh.helm.release.v1.debug-lab.v1   helm.sh/release.v1   1      2m6s
+]666;vte.shell.postexec=0\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mcd ~/Downloads/eb-devops-takehome-main[27m
+[7mgit rm lab/go.mod[27m
+[7m# also check for a stray go.sum or the gosyms binary[27m
+[7mgit ls-files lab/ | grep -iE 'go\.(mod|sum)|gosyms'[27m[A[A[A]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ cd ~/Downloads/eb-devops-takehome-main
+git rm lab/go.mod
+# also check for a stray go.sum or the gosyms binary
+git ls-files lab/ | grep -iE 'go\.(mod|sum)|gosyms'
+[?2004l]133;C\]666;vte.shell.preexec!\]133;C\]666;vte.shell.preexec!\rm 'lab/go.mod'
+]133;C\]666;vte.shell.preexec!\]666;vte.shell.postexec=1\]7;file://Workstation/home/vboxuser/Downloads/eb-devops-takehome-main\]0;vboxuser@Workstation:~/Downloads/eb-devops-takehome-main\]666;vte.shell.precmd!\[?2004h]0;vboxuser@Workstation: ~/Downloads/eb-devops-takehome-main[01;32mvboxuser@Workstation[00m:[01;34m~/Downloads/eb-devops-takehome-main[00m$ [7mgit ls-files lab/[27mgit ls-files lab/
+[?2004l]133;C\]666;vte.shell.preexec!\lab/FINDINGS.md
+lab/broken-chart/Chart.yaml
+lab/broken-chart/templates/NOTES.txt
+lab/broken-chart/templates/_helpers.tpl
+lab/broken-chart/templates/backend.yaml
+lab/broken-chart/templates/gateway.yaml
+lab/broken-chart/templates/metrics.yaml
+lab/broken-chart/templates/migrate-job.yaml
+lab/broken-chart/te
