@@ -1,0 +1,10 @@
+*-do-not-commit.md
+REVIEW-NOTES-do-not-commit.md
+LAB-HINTS-do-not-commit.md
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+reports/
+.env
+*.tgz
