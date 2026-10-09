@@ -1,0 +1,4 @@
+# allow-list: only what the image needs goes into the build context
+*
+!app.py
+!requirements.txt
