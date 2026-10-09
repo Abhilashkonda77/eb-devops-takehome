@@ -1,0 +1,61 @@
+# -- keys required by the assignment harness --
+replicaCount: 2
+
+image:
+  repository: demo-service
+  tag: "0.1.0"
+  # kind-loaded image is never in a registry, so never "Always"
+  pullPolicy: IfNotPresent
+
+config:
+  appName: demo
+  version: "0.1.0"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: demo.local
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+
+# -- extras --
+service:
+  type: ClusterIP
+  port: 80
+
+containerPort: 8080
+
+# setup.sh sets an image ID here so a rebuilt image with the same tag still rolls out
+podAnnotations: {}
+
+probes:
+  liveness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 2
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
