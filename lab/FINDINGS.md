@@ -1,154 +1,177 @@
-# Findings — Part 4 debug lab
+# Findings — Part 4 Debug Lab
 
-Fill in one entry per defect you find. Paste the *actual* output you saw —
-we cross-check it against your session recording and your git diff, and the
-diagnostic path matters more to us than the fix itself.
+## Summary
 
-Before you start investigating, begin recording:
-`script -q part4-session.log` (or `asciinema rec part4-session.cast`), and
-commit that file alongside this one.
+This document records the defects investigated in the Part 4 debug lab,
+the changes made to the Helm chart, and the remaining unresolved issue.
 
----
+The chart changes made during investigation include:
+- Correcting the migration Job restart policy.
+- Correcting the gateway backend URL namespace.
+- Reducing metrics CPU resources to fit the namespace LimitRange.
+- Binding the reporter RoleBinding to the reporter ServiceAccount.
+- Setting a numeric non-root UID for the workloads.
+- Providing writable cache storage for the worker.
+- Setting the application port to 8080.
 
-## Defect 1
+The exact number of original lab defects should be cross-checked against
+the lab instructions. Related configuration changes are listed separately
+here rather than assumed to be separate original defects.
 
-**Symptom** (what you observed — paste the real command output):
+## Defect 1 — Invalid migration Job restart policy
 
-**Cause** (the actual root cause, not the symptom restated):
+**Symptom:** The migration Job could not be created successfully.
 
-**Fix** (what you changed, and why this over alternatives):
+**Cause:** The Job template used `restartPolicy: Always`, which is not
+supported for a Kubernetes Job.
 
-**How I found it** (the sequence of commands/reasoning that led you here):
+**Fix:** Changed the restart policy to `OnFailure` in
+`broken-chart/templates/migrate-job.yaml`.
 
----
+**Evidence:** Capture the actual error from `scenario.sh up` or the
+Kubernetes event output. Do not insert an example error as if it were
+the original terminal output.
 
-## Defect 2
+## Defect 2 — Gateway backend URL uses the wrong namespace
 
-**Symptom:**
+**Symptom:** The gateway could not successfully reach the intended backend.
 
-**Cause:**
+**Cause:** The configured URL used `backend.default.svc:8080`, while the
+backend Service is in the `debug-lab` namespace.
 
-**Fix:**
+**Fix:** Updated the backend URL in `broken-chart/values.yaml` to
+`http://backend.debug-lab.svc:8080`.
 
-**How I found it:**
+**Verification:** Test the gateway status endpoint and inspect gateway logs.
+Record the actual command output and result.
 
----
+## Defect 3 — Metrics CPU settings exceed the namespace limit
 
-## Defect 3
+**Symptom:** The metrics workload could not create its pod when its CPU
+settings exceeded the namespace LimitRange.
 
-**Symptom:**
+**Cause:** The original CPU request and limit were higher than the
+namespace's permitted maximum.
 
-**Cause:**
+**Fix:** Changed the metrics CPU request to `100m` and limit to `500m`
+in `broken-chart/values.yaml`.
 
-**Fix:**
+**Verification:** Inspect the metrics Deployment and its ReplicaSet events.
+Record the actual admission error and the post-fix rollout result when available.
 
-**How I found it:**
+## Defect 4 — Reporter RoleBinding targets the wrong ServiceAccount
 
----
+**Symptom:** The reporter did not have the intended permissions to list pods.
 
-## Defect 4
+**Cause:** The RoleBinding subject referred to the `default` ServiceAccount
+instead of the `reporter` ServiceAccount.
 
-**Symptom:**
+**Fix:** Updated the subject in `broken-chart/templates/rbac.yaml` to
+reference `reporter`.
 
-**Cause:**
+**Verification command:**
 
-**Fix:**
+`kubectl auth can-i list pods -n debug-lab --as=system:serviceaccount:debug-lab:reporter`
 
-**How I found it:**
+Record the actual output from the command.
 
----
+## Additional workload configuration fixes
 
-## Defect 5
+These changes were made during troubleshooting. Confirm which correspond
+to distinct defects in the original lab instructions before assigning them
+individual defect numbers.
 
-**Symptom:**
+### Non-root container UID
 
-**Cause:**
+Added `runAsUser: 1000` alongside `runAsNonRoot: true` in the workload
+templates. Verify the image's user and the lab's security requirements
+before treating this as the intended fix for a specific original defect.
 
-**Fix:**
+### Worker writable cache
 
-**How I found it:**
+Added an `emptyDir` volume mounted at `/var/cache/app` for the worker,
+so that the application has a writable location despite the read-only
+root filesystem.
 
----
+### Application port
 
-## Defect 6
+Set `PORT: "8080"` in the workload environment because the chart's
+Service and probes expect port 8080. Confirm the application's actual
+listening port and probe results.
 
-**Symptom:**
+## Reporter issue — Pod-list JSON parsing failure
 
-**Cause:**
+**Symptom:** The reporter logs:
 
-**Fix:**
+`pod list failed: parse pod list: unexpected end of JSON input`
 
-**How I found it:**
+Its `/healthz` endpoint returns HTTP 503 and the reporter does not become Ready.
 
----
+**Checks already performed:**
+- The reporter ServiceAccount was granted permission to list pods.
+- An in-cluster API request using the reporter ServiceAccount returned
+  HTTP 200 and valid PodList JSON.
+- The response observed during investigation was approximately 113 KB.
+- Binary disassembly showed `movq $0x400,0x10(%rax)` near a call to
+  `io.ReadAll` in `main.(*reporter).listPods`.
 
-If you ran out of time on any defect, say so here and describe what you would
-have tried next — that section is read carefully and counts in your favour.
+**Diagnosis:** Disassembly of `main.(*reporter).listPods` shows
+`movq $0x400,0x10(%rax)` immediately before the call to `io.ReadAll`.
+Disassembly of `io.(*LimitedReader).Read` confirms that the field at offset
+`0x10` is used as the remaining-byte count. The value `0x400` is 1024.
+The observed Kubernetes PodList response is approximately 113 KB, while
+the reporter logs `unexpected end of JSON input` and returns HTTP 503.
+Together, this is strong evidence that the reporter reads only the first
+1024 bytes before attempting to parse the JSON response.
 
-## Reporter API response parsing — unresolved image limitation
+**Fix limitation:** No supported chart setting for this limit has been
+identified. A proper fix requires a corrected application image or a
+documented, supported override from the lab authors. Do not claim a
+successful reporter fix or change the required image reference without
+authorization.
 
-- **Symptom:** The reporter logs `pod list failed: parse pod list: unexpected end of JSON input`, and its `/healthz` endpoint returns HTTP 503.
-- **API verification:** A request to the Kubernetes API using the reporter ServiceAccount returned HTTP 200 and valid PodList JSON of approximately 113 KB. RBAC permission to list pods was verified.
-- **Binary investigation:** In `main.(*reporter).listPods`, the disassembly shows `movq $0x400,0x10(%rax)` immediately before a call to `io.ReadAll`. This is consistent with a 1,024-byte `io.LimitedReader` being constructed for the response body. No supported configuration variable for increasing this limit has been identified.
-- **Impact:** The response is larger than the apparent reader limit, which is consistent with the incomplete JSON error. This diagnosis is based on binary disassembly because the reporter source code is unavailable.
-- **Status:** Unresolved with the available chart configuration. Do not claim the reporter checks pass. A confirmed fix requires inspecting the source or obtaining a corrected compatible image; the fixed image reference must remain unchanged unless the lab rules explicitly permit otherwise.
-- **Assistance:** AI assistance was used to help interpret the Go binary disassembly and investigate the failure.
+**Status:** Unresolved at the application-image level.
 
-## Reporter API response parsing — unresolved image limitation
+## Verification status
 
-- **Symptom:** The reporter logs `pod list failed: parse pod list: unexpected end of JSON input`, and its `/healthz` endpoint returns HTTP 503.
-- **API verification:** A request to the Kubernetes API using the reporter ServiceAccount returned HTTP 200 and valid PodList JSON of approximately 113 KB. RBAC permission to list pods was verified.
-- **Binary investigation:** In `main.(*reporter).listPods`, the disassembly shows `movq $0x400,0x10(%rax)` immediately before a call to `io.ReadAll`. This is consistent with a 1,024-byte `io.LimitedReader` being constructed for the response body. No supported configuration variable for increasing this limit has been identified.
-- **Impact:** The response is larger than the apparent reader limit, which is consistent with the incomplete JSON error. This diagnosis is based on binary disassembly because the reporter source code is unavailable.
-- **Status:** Unresolved with the available chart configuration. Do not claim the reporter checks pass. A confirmed fix requires inspecting the source or obtaining a corrected compatible image; the fixed image reference must remain unchanged unless the lab rules explicitly permit otherwise.
-- **Assistance:** AI assistance was used to help interpret the Go binary disassembly and investigate the failure.
+Latest recorded run: `bash scenario.sh verify`
 
-## Reporter: 1 KiB response cap in the prebuilt image — image defect, not chart-fixable
+Result: **7 checks passed; 4 checks failed.**
 
-**Symptom**
+Passing checks:
+- Migration Job completed.
+- Backend, gateway, worker, and metrics deployments are ready.
+- No pods are in CrashLoopBackOff.
+- Reporter ServiceAccount can list pods.
 
-**Cause (confirmed from the binary, no source available)**
-- RBAC is correct: `kubectl auth can-i list pods -n debug-lab --as=system:serviceaccount:debug-lab:reporter` → yes.
-- The API is healthy: in-cluster request with the reporter SA returns HTTP 200 and ~113 KB of valid PodList JSON.
-- `main.(*reporter).listPods` writes a fixed 1024 into the LimitedReader field (`movq $0x400,0x10(%rax)`) immediately before `io.ReadAll`, with no preceding Getenv/Atoi/test/cmov guard. The body is truncated to 1 KiB, so json.Unmarshal hits end-of-input and fails.
-- No environment variable controls this limit (full binary env-read scan found none).
+Failing checks:
+- Reporter deployment is not Ready (`0/1` replicas ready).
+- Backend `/healthz` check failed in the verifier.
+- Gateway `/status` check failed in the verifier.
+- Reporter `/report` did not return a pod count.
 
-**Fix**
-- The only correct fix is a new image where listPods reads the full body (or the limit is configurable). The lab forbids changing image repo/tag, so there is no legitimate chart-level fix. Changing RBAC, memory, resource limits, or the target namespace would not address a client-side truncation and would be a symptom hack.
+During separate direct in-cluster probes, the backend returned
+`{"status":"ok"}` and the gateway returned a response with
+`"backend":"ok"`. These results conflict with the corresponding
+verifier failures, so those checks require further investigation.
+The reporter logs repeatedly show
+`parse pod list: unexpected end of JSON input`.
 
-**How I found it**
-- Verified RBAC and the raw API response, then recovered the stripped binary's function table via .gopclntab and disassembled listPods to locate the hardcoded limit.
+Binary disassembly showed a 1024-byte value being set near the
+reporter's `io.ReadAll` call. Along with the approximately 113 KB
+PodList response, this supports the truncation hypothesis. The reporter
+issue remains unresolved. Do not claim the complete verification suite
+passes.
 
-## Reporter: 1 KiB response cap in the prebuilt image — image defect, not chart-fixable
+## AI assistance
 
-**Symptom**
+AI assistance was used to help investigate Kubernetes configuration,
+interpret Go binary disassembly, and document troubleshooting results.
+All evidence included in this file should correspond to commands actually
+run during the investigation.
 
+## Follow-up
 
-**Cause (confirmed from the binary, no source available)**
-- RBAC is correct: `kubectl auth can-i list pods -n debug-lab --as=system:serviceaccount:debug-lab:reporter` → yes.
-- The API is healthy: in-cluster request with the reporter SA returns HTTP 200 and ~113 KB of valid PodList JSON.
-- `main.(*reporter).listPods` writes a fixed 1024 into the LimitedReader field (`movq $0x400,0x10(%rax)`) immediately before `io.ReadAll`, with no preceding Getenv/Atoi/test/cmov guard. The body is truncated to 1 KiB, so json.Unmarshal hits end-of-input and fails.
-- No environment variable controls this limit (full binary env-read scan found none).
-
-**Fix**
-- The only correct fix is a new image where listPods reads the full body (or the limit is configurable). The lab forbids changing image repo/tag, so there is no legitimate chart-level fix. Changing RBAC, memory, resource limits, or the target namespace would not address a client-side truncation and would be a symptom hack.
-
-**How I found it**
-- Verified RBAC and the raw API response, then recovered the stripped binary's function table via .gopclntab and disassembled listPods to locate the hardcoded limit.
-
-## Defect 6 — reporter truncates the pod-list response (prebuilt-image bug, not chart-fixable)
-
-**Symptom** (reporter pod logs; never becomes Ready, /healthz 503):
-
-**Cause** (confirmed by binary analysis; no Go source ships with the lab):
-- RBAC is correct — `kubectl auth can-i list pods -n debug-lab --as=system:serviceaccount:debug-lab:reporter` → yes.
-- The API is healthy — an in-cluster request with the reporter ServiceAccount returns HTTP 200 and ~113 KB of valid PodList JSON.
-- `main.(*reporter).listPods` (0x6a36c0–0x6a3e40) sets an io.LimitedReader limit to a hardcoded 1024 bytes (`movq $0x400,0x10(%rax)`, unconditional — no Getenv/Atoi and no test/cmov guard precede it) just before io.ReadAll. The 113 KB body is truncated to 1 KiB, so json.Unmarshal fails with "unexpected end of JSON input".
-- The function's call list contains net/http and io.ReadAll but NOT os.Getenv or strconv.Atoi, so no environment variable can raise the limit.
-
-**Fix:**
-- The only correct fix is a corrected image (read the full body, or make the cap configurable). The lab forbids changing image.repository/tag, so there is no legitimate chart-level fix. Changing RBAC, resources, or the target namespace would not touch a client-side truncation and would be a symptom hack, so I left the reporter failing and documented it here.
-
-**How I found it:**
-- Confirmed RBAC and the raw API response, ruling out permissions and the server.
-- `go tool objdump` failed ("no symbol section") because the binary is stripped, so I recovered the function table from .gopclntab and disassembled main.(*reporter).listPods at its real address, where the fixed 1024-byte reader limit is set with no config path.
+Review the original lab instructions to ensure the documented defects map
+to the expected defect count. Capture missing evidence from actual command
+output where possible, then rerun the verifier and update this document.
